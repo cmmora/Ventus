@@ -3,7 +3,11 @@ Ventus WM [![Build Status](https://travis-ci.org/rlamana/Ventus.svg?branch=maste
 
 A window manager written in Javascript, HTML5 and CSS3.
 
-<a href="http://www.rlamana.es/ventus">Live Demo!</a> (http://www.rlamana.es/ventus) | <a href="https://vimeo.com/62041866">Video Demo</a>
+<a href="http://www.rlamana.com/ventus">Live Demo!</a> (http://www.rlamana.com/ventus) | <a href="https://vimeo.com/62041866">Video Demo</a>
+
+This project started as an experiment and even though it was stable enough **it was never meant to be mantained over time**. However, feel free to fork and send PRs!
+
+Version 0.3.0 migrates code to webpack and ES6 and is available in branch: https://github.com/rlamana/Ventus/tree/v0.3.0.
 
 ### Creating a new window manager
 
@@ -17,6 +21,21 @@ A window manager written in Javascript, HTML5 and CSS3.
 		y: 50,
 		width: 400,
 		height: 250
+	});
+	
+	window.open();
+
+### Creating a new empty window without animations and staying inside of the space
+
+	var window = wm.createWindow({
+		title: 'A new window',
+		x: 50,
+		y: 50,
+		width: 400,
+		height: 250
+
+		animations: false,
+		stayinspace: true,
 	});
 	
 	window.open();

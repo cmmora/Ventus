@@ -4,22 +4,26 @@
  * https://github.com/rlamana
  */
 define([
-	'$',
 	'ventus/wm/window',
 	'ventus/core/view',
 	'ventus/wm/modes/default',
 	'ventus/wm/modes/expose',
-	'ventus/wm/modes/fullscreen'
+  'ventus/less/windowmanager.less'
 ],
-function($, Window, View, DefaultMode, ExposeMode, FullscreenMode) {
+function(Window, View, DefaultMode, ExposeMode) {
 	'use strict';
 
-	var WindowManager = function () {
-		this.el = View('<div class="wm-space"><div class="wm-overlay" /></div>');
-		$(document.body).prepend(this.el);
+	var WindowManager = function (container) {
+		var createWindow;
+    var root = container ? container : document.body;
 
-		this.$overlay = this.el.find('.wm-overlay');
-		this.$overlay.css('z-index', this._baseZ-1);
+		this.view = new View(
+      '<div class="wm-space"><div class="wm-overlay" /></div>'
+    );
+    root.insertBefore(this.view.el, root.firstChild);
+
+		this.$overlay = this.view.find('.wm-overlay');
+		this.$overlay.el.style.zIndex = this._baseZ - 1;
 
 		// Generate mode plugin actions wrapper
 		this.actions.forEach(function(value){
@@ -44,9 +48,13 @@ function($, Window, View, DefaultMode, ExposeMode, FullscreenMode) {
 
 		this.mode = 'default';
 
-		// Binding sub-functions to this object
-		this.createWindow.fromQuery = this.createWindow.fromQuery.bind(this);
-		this.createWindow.fromElement = this.createWindow.fromElement.bind(this);
+		// Replace createWindow function on prototype with instance-specific copy
+		// (avoids pollution of prototype during the next step)
+		createWindow = this.createWindow;
+		this.createWindow = createWindow.bind(this);
+		// Bind this to sub-functions of createWindow function
+		this.createWindow.fromQuery = createWindow.fromQuery.bind(this);
+		this.createWindow.fromElement = createWindow.fromElement.bind(this);
 	};
 
 	WindowManager.prototype = {
@@ -62,12 +70,10 @@ function($, Window, View, DefaultMode, ExposeMode, FullscreenMode) {
 
 		modes: {
 			'default': DefaultMode,
-			'expose': ExposeMode,
-			'fullscreen': FullscreenMode
+			'expose': ExposeMode
 		},
 
 		set mode(value) {
-
 			var mode = this.modes[value];
 			if(!mode || this._mode === value) {
 				return;
@@ -95,15 +101,15 @@ function($, Window, View, DefaultMode, ExposeMode, FullscreenMode) {
 		},
 
 		set overlay(value) {
-			this.$overlay.css('opacity', value ? 0.8 : 0);
-			this._overlay = value;
+			this.$overlay.el.style.opacity = value ? 0.8 : 0;
+			this._overlay = this.$overlay.el.style.opacity;
 		},
 
 		get overlay() {
 			return this._overlay;
 		},
 
-		createWindow: function(options) {
+		createWindow(options) {
 			var win = new Window(options);
 
 			// Show 'default' mode
@@ -121,7 +127,7 @@ function($, Window, View, DefaultMode, ExposeMode, FullscreenMode) {
 
 			this.windows.push(win);
 
-			win.space = this.el;
+			win.space = this.view;
 
 			win.focus();
 			return win;
@@ -130,7 +136,7 @@ function($, Window, View, DefaultMode, ExposeMode, FullscreenMode) {
 		/**
 		 * Internal action always performed besides the mode definition
 		 */
-		_focus: function(win) {
+		_focus(win) {
 			var currentZ,
 				baseZ = 10000,
 				maxZ = baseZ + 10000,
@@ -169,7 +175,7 @@ function($, Window, View, DefaultMode, ExposeMode, FullscreenMode) {
 		/**
 		 * Internal action always performed besides the mode definition
 		 */
-		_blur: function(win) {
+		_blur(win) {
 			if(this.active === win) {
 				this.active = null;
 			}
@@ -178,7 +184,7 @@ function($, Window, View, DefaultMode, ExposeMode, FullscreenMode) {
 		/**
 		 * Internal action always performed besides the mode definition
 		 */
-		_close: function(win) {
+		_close(win) {
 			// Remove window from manager
 			var id = this.windows.indexOf(win), len;
 			if(id === -1) {
@@ -198,12 +204,15 @@ function($, Window, View, DefaultMode, ExposeMode, FullscreenMode) {
 	};
 
 	WindowManager.prototype.createWindow.fromQuery = function(selector, options) {
-		options.content = View(selector);
+    const element = document.querySelector(selector);
+    if (!!element) {
+      options.content = new View(element);
+    }
 		return this.createWindow(options);
 	};
 
 	WindowManager.prototype.createWindow.fromElement = function(element, options) {
-		options.content = View(element);
+		options.content = new View(element);
 		return this.createWindow(options);
 	};
 
